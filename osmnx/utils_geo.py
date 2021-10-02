@@ -351,11 +351,6 @@ def _get_polygons_coordinates(geometry):
 
 
 def _quadrat_cut_geometry(geometry, quadrat_width, min_num=3):
-    l = list(_quadrat_cut_geometry_recursive(geometry, quadrat_width, min_num))
-    print(len(l))
-    return MultiPolygon(l)
-
-def _quadrat_cut_geometry_recursive(geometry, quadrat_width, min_num):
     """
     Split a Polygon or MultiPolygon up into sub-polygons of a specified size.
 
@@ -367,13 +362,15 @@ def _quadrat_cut_geometry_recursive(geometry, quadrat_width, min_num):
         the linear width of the quadrats with which to cut up the geometry (in
         the units the geometry is in)
     min_num : int
-        the minimum number of linear quadrat lines (e.g., min_num=3 would
-        produce a quadrat grid of 4 squares)
+        ignored
 
     Returns
     -------
     geometry : shapely.geometry.MultiPolygon
     """
+    return MultiPolygon(_quadrat_cut_geometry_recursive(geometry, quadrat_width))
+
+def _quadrat_cut_geometry_recursive(geometry, quadrat_width):
     west, south, east, north = geometry.bounds
 
     width = east - west
@@ -387,37 +384,19 @@ def _quadrat_cut_geometry_recursive(geometry, quadrat_width, min_num):
         vertical_line = LineString([(x_mid, south), (x_mid, north)])
         split_list = []
         for split_ in split(geometry, vertical_line):
-            yield from _quadrat_cut_geometry_recursive(split_, quadrat_width, min_num)
+            yield from _quadrat_cut_geometry_recursive(split_, quadrat_width)
         return
     elif split_vertical:
         y_mid = (north + south) / 2
         horizontal_line = LineString([(east, y_mid), (west, y_mid)])
         split_list = []
         for split_ in split(geometry, horizontal_line):
-            yield from _quadrat_cut_geometry_recursive(split_, quadrat_width, min_num)
+            yield from _quadrat_cut_geometry_recursive(split_, quadrat_width)
         return
     else:
         # Check that this is below required size
         assert height <= quadrat_width and width <= quadrat_width
         yield geometry
-
-    # x_num = int(np.ceil((east - west) / quadrat_width) + 1)
-    # y_num = int(np.ceil((north - south) / quadrat_width) + 1)
-
-    # # # create a quadrat grid of lines at each of the evenly spaced points
-    # horizont_lines = [LineString([(x_points[0], y), (x_points[-1], y)]) for y in y_points]
-    # # lines = vertical_lines + horizont_lines
-    # # print(f"{len(lines)}")
-    # geometry = MultiPolygon(split(geometry, vertical_lines[100]))
-
-    # # # recursively split the geometry by each quadrat line
-    # # for i, line in enumerate(lines):
-    # #     print("split", i)
-    # #     geometry = MultiPolygon(split(geometry, line))
-
-    # print(len(list(geometry)))
-
-    # return geometry
 
 
 def _intersect_index_quadrats(geometries, polygon, quadrat_width=1, min_num=3):
