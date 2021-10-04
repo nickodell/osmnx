@@ -732,6 +732,13 @@ def overpass_request(data, pause=None, error_pause=60):
         )
         sc = response.status_code
 
+        # log the request size
+        def header_size(headers):
+            return sum(len(key) + len(value) + 4 for key, value in headers.items()) + 2
+        request_line_size = len(response.request.method) + len(response.request.path_url) + 12
+        request_size_kb = (request_line_size + header_size(response.request.headers) + int(response.request.headers.get('content-length', 0))) / 1000
+        utils.log(f"Uploaded {request_size_kb:,.1f} kB")
+
         # log the response size and domain
         size_kb = len(response.content) / 1000
         domain = re.findall(r"(?s)//(.*?)/", url)[0]
