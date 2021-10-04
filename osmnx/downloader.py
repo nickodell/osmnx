@@ -460,8 +460,7 @@ def _create_overpass_query(polygon_coord_str, tags):
                 # otherwise, pass "key"="value"
                 tag_str = f"['{key}'='{value}'](poly:'{polygon_coord_str}');(._;>;);"
 
-            for kind in ("node", "way", "relation"):
-                components.append(f"({kind}{tag_str});")
+            components.append(f"(nwr{tag_str});")
 
     # finalize query and return
     components = "".join(components)
