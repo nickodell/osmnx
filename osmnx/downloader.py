@@ -725,7 +725,7 @@ def overpass_request(data, pause=None, error_pause=60):
         time.sleep(this_pause)
 
         # transmit the HTTP POST request
-        utils.log(f"Post {prepared_url} with timeout={settings.timeout}")
+        # utils.log(f"Post {prepared_url} with timeout={settings.timeout}")
         headers = _get_http_headers()
         response = requests.post(
             url, data=data, timeout=settings.timeout, headers=headers, **settings.requests_kwargs
