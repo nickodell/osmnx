@@ -733,10 +733,12 @@ def overpass_request(data, pause=None, error_pause=60):
         sc = response.status_code
 
         # log the response size, request size and domain
-        request_size_kb = int(response.request.headers.get('content-length', 0)) / 1000
+        request_size_kb = int(response.request.headers.get("content-length", 0)) / 1000
         response_size_kb = len(response.content) / 1000
         domain = re.findall(r"(?s)//(.*?)/", url)[0]
-        utils.log(f"Downloaded {response_size_kb:,.1f}kB, uploaded {request_size_kb:,.1f}kB from {domain}")
+        utils.log(
+            f"Downloaded {response_size_kb:,.1f}kB, uploaded {request_size_kb:,.1f}kB from {domain}"
+        )
 
         try:
             response_json = response.json()
