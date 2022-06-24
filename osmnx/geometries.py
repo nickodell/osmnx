@@ -65,7 +65,7 @@ def geometries_from_bbox(north, south, east, west, tags):
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module.
     """
     # convert bounding box to a polygon
     polygon = utils_geo.bbox_to_poly(north, south, east, west)
@@ -106,7 +106,7 @@ def geometries_from_point(center_point, tags, dist=1000):
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module.
     """
     # create bounding box from center point and distance in each direction
     north, south, east, west = utils_geo.bbox_from_point(center_point, dist)
@@ -151,7 +151,7 @@ def geometries_from_address(address, tags, dist=1000):
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module.
     """
     # geocode the address string to a (lat, lng) point
     center_point = geocoder.geocode(query=address)
@@ -208,7 +208,7 @@ def geometries_from_place(query, tags, which_result=None, buffer_dist=None):
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module.
     """
     # create a GeoDataFrame with the spatial boundaries of the place(s)
     if isinstance(query, (str, dict)):
@@ -261,7 +261,7 @@ def geometries_from_polygon(polygon, tags):
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module.
     """
     # verify that the geometry is valid and a Polygon/MultiPolygon
     if not polygon.is_valid:
@@ -802,7 +802,7 @@ def _assemble_multipolygon_component_polygons(element, geometries):
     if merged_outer_linestrings.geom_type == "LineString":
         outer_polygons += polygonize(merged_outer_linestrings)
     elif merged_outer_linestrings.geom_type == "MultiLineString":
-        for merged_outer_linestring in list(merged_outer_linestrings):
+        for merged_outer_linestring in list(merged_outer_linestrings.geoms):
             outer_polygons += polygonize(merged_outer_linestring)
 
     # Merge inner linestring fragments.
@@ -813,7 +813,7 @@ def _assemble_multipolygon_component_polygons(element, geometries):
     if merged_inner_linestrings.geom_type == "LineString":
         inner_polygons += polygonize(merged_inner_linestrings)
     elif merged_inner_linestrings.geom_type == "MultiLineString":
-        for merged_inner_linestring in list(merged_inner_linestrings):
+        for merged_inner_linestring in merged_inner_linestrings.geoms:
             inner_polygons += polygonize(merged_inner_linestring)
 
     if not outer_polygons:
@@ -869,7 +869,7 @@ def _subtract_inner_polygons_from_outer_polygons(element, outer_polygons, inner_
         if outer_polygon.geom_type == "Polygon":
             outer_polygons_with_holes.append(outer_polygon)
         elif outer_polygon.geom_type == "MultiPolygon":
-            outer_polygons_with_holes.extend(list(outer_polygon))
+            outer_polygons_with_holes.extend(list(outer_polygon.geoms))
 
     # if only one polygon with holes was created, return that single polygon
     if len(outer_polygons_with_holes) == 1:

@@ -1,6 +1,7 @@
 """Graph creation functions."""
 
 import itertools
+import warnings
 
 import networkx as nx
 from shapely.geometry import MultiPolygon
@@ -13,6 +14,7 @@ from . import osm_xml
 from . import projection
 from . import settings
 from . import simplification
+from . import stats
 from . import truncate
 from . import utils
 from . import utils_geo
@@ -72,7 +74,9 @@ def graph_from_bbox(
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module. Very large query areas
+    will use the utils_geo._consolidate_subdivide_geometry function to perform
+    multiple queries: see that function's documentation for caveats.
     """
     # convert bounding box to a polygon
     polygon = utils_geo.bbox_to_poly(north, south, east, west)
@@ -144,7 +148,9 @@ def graph_from_point(
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module. Very large query areas
+    will use the utils_geo._consolidate_subdivide_geometry function to perform
+    multiple queries: see that function's documentation for caveats.
     """
     if dist_type not in {"bbox", "network"}:  # pragma: no cover
         raise ValueError('dist_type must be "bbox" or "network"')
@@ -232,7 +238,9 @@ def graph_from_address(
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module. Very large query areas
+    will use the utils_geo._consolidate_subdivide_geometry function to perform
+    multiple queries: see that function's documentation for caveats.
     """
     # geocode the address string to a (lat, lng) point
     point = geocoder.geocode(query=address)
@@ -318,7 +326,9 @@ def graph_from_place(
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module. Very large query areas
+    will use the utils_geo._consolidate_subdivide_geometry function to perform
+    multiple queries: see that function's documentation for caveats.
     """
     # create a GeoDataFrame with the spatial boundaries of the place(s)
     if isinstance(query, (str, dict)):
@@ -395,7 +405,9 @@ def graph_from_polygon(
     Notes
     -----
     You can configure the Overpass server timeout, memory allocation, and
-    other custom settings via ox.config().
+    other custom settings via the `settings` module. Very large query areas
+    will use the utils_geo._consolidate_subdivide_geometry function to perform
+    multiple queries: see that function's documentation for caveats.
     """
     # verify that the geometry is valid and is a shapely Polygon/MultiPolygon
     # before proceeding
@@ -443,7 +455,7 @@ def graph_from_polygon(
         # count how many physical streets in buffered graph connect to each
         # intersection in un-buffered graph, to retain true counts for each
         # intersection, even if some of its neighbors are outside the polygon
-        spn = utils_graph.count_streets_per_node(G_buff, nodes=G.nodes)
+        spn = stats.count_streets_per_node(G_buff, nodes=G.nodes)
         nx.set_node_attributes(G, values=spn, name="street_count")
 
     # if clean_periphery=False, just use the polygon as provided
@@ -458,11 +470,22 @@ def graph_from_polygon(
         # truncate the graph to the extent of the polygon
         G = truncate.truncate_graph_polygon(G, polygon, retain_all, truncate_by_edge)
 
-        # simplify the graph topology as the last step. don't truncate after
+        # simplify the graph topology after truncation. don't truncate after
         # simplifying or you may have simplified out to an endpoint beyond the
         # truncation distance, which would strip out the entire edge
         if simplify:
             G = simplification.simplify_graph(G)
+
+        # count how many physical streets connect to each intersection/deadend
+        # note this will be somewhat inaccurate due to periphery effects, so
+        # it's best to parameterize function with clean_periphery=True
+        spn = stats.count_streets_per_node(G)
+        nx.set_node_attributes(G, values=spn, name="street_count")
+        msg = (
+            "the graph-level street_count attribute will likely be inaccurate "
+            "when you set clean_periphery=False"
+        )
+        warnings.warn(msg)
 
     utils.log(f"graph_from_polygon returned graph with {len(G)} nodes and {len(G.edges)} edges")
     return G
@@ -749,12 +772,15 @@ def _add_paths(G, paths, bidirectional=False):
         if not settings.all_oneway:
             path["oneway"] = is_one_way
 
-        # zip path nodes to get (u, v) tuples like [(0,1), (1,2), (2,3)]. if
-        # the path is NOT one-way, reverse direction of each edge and add this
-        # path going the opposite direction too
+        # zip path nodes to get (u, v) tuples like [(0,1), (1,2), (2,3)].
         edges = list(zip(nodes[:-1], nodes[1:]))
-        if not is_one_way:
-            edges.extend([(v, u) for u, v in edges])
 
         # add all the edge tuples and give them the path's tag:value attrs
+        path["reversed"] = False
         G.add_edges_from(edges, **path)
+
+        # if the path is NOT one-way, reverse direction of each edge and add
+        # this path going the opposite direction too
+        if not is_one_way:
+            path["reversed"] = True
+            G.add_edges_from([(v, u) for u, v in edges], **path)

@@ -53,13 +53,13 @@ autodoc_mock_imports = [
 
 # General information about the project.
 project = "OSMnx"
-copyright = "2016–2021, Geoff Boeing"
+copyright = "2016–2022, Geoff Boeing"
 author = "Geoff Boeing"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-version = release = "1.1.2dev"
+version = release = "1.2.1"
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
@@ -87,7 +87,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

@@ -2,11 +2,38 @@
 
 ## TBD
 
+  - resolve shapely deprecation warning
+
+## 1.2.1 (2022-06-16)
+
+  - fix rate limit checking and pausing on newest versions of Overpass API
+  - allow add_edge_lengths function to be run on a subset of edges
+  - resolve pandas deprecation warning
+
+## 1.2.0 (2022-05-23)
+
+  - add ability to load GraphML string data to the load_graphml function
+  - add "reversed" edge attribute to support node-order-dependent edge attributes
+  - add new edge_color and edge_linewidth arguments to plot_footprints function
+  - fix nearest_edges function selecting arbitrary edge when bounding boxes overlap
+  - fix get_digraph function's parallel edge handling
+  - fix pandas and geopandas version compatibility
+  - fix log output appearing in Jupyter notebooks on Unix-like systems
+  - remove old functions and arguments previously deprecated in v1.1
+  - deprecate utils.config function in favor of using settings module directly
+
+## 1.1.2 (2021-11-17)
+  
   - fix geocoding when no geojson is returned
   - fix graph simplification to properly handle travel_time edge attributes
+  - fix streets per node not being calculated when clean_periphery=False
   - allow user-defined aggregation function when imputing missing edge speeds
   - allow user to configure requests package keyword arguments when connecting to APIs
   - faster graph projection by calculating UTM zone number with a computationally cheaper method
+  - improve efficiency of quadrat-based geometry cutting
+  - fall back on google dns resolution when necessary if using a proxy
+  - move count_streets_per_node function to stats module
+  - resolve shapely and geopandas deprecation warnings
 
 ## 1.1.1 (2021-05-19)
 

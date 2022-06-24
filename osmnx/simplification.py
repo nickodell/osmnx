@@ -5,6 +5,7 @@ import logging as lg
 import geopandas as gpd
 import networkx as nx
 from shapely.geometry import LineString
+from shapely.geometry import MultiPolygon
 from shapely.geometry import Point
 from shapely.geometry import Polygon
 
@@ -423,10 +424,9 @@ def _merge_nodes_geometric(G, tolerance):
     merged = utils_graph.graph_to_gdfs(G, edges=False)["geometry"].buffer(tolerance).unary_union
 
     # if only a single node results, make it iterable to convert to GeoSeries
-    if isinstance(merged, Polygon):
-        merged = [merged]
+    merged = MultiPolygon([merged]) if isinstance(merged, Polygon) else merged
 
-    return gpd.GeoSeries(list(merged), crs=G.graph["crs"])
+    return gpd.GeoSeries(merged.geoms, crs=G.graph["crs"])
 
 
 def _consolidate_intersections_rebuild_graph(G, tolerance=10, reconnect_edges=True):
@@ -478,7 +478,7 @@ def _consolidate_intersections_rebuild_graph(G, tolerance=10, reconnect_edges=Tr
     # graph's node points then spatial join to give each node the label of
     # cluster it's within
     node_points = utils_graph.graph_to_gdfs(G, edges=False)[["geometry"]]
-    gdf = gpd.sjoin(node_points, node_clusters, how="left", op="within")
+    gdf = gpd.sjoin(node_points, node_clusters, how="left", predicate="within")
     gdf = gdf.drop(columns="geometry").rename(columns={"index_right": "cluster"})
 
     # STEP 3
@@ -496,11 +496,12 @@ def _consolidate_intersections_rebuild_graph(G, tolerance=10, reconnect_edges=Tr
                 suffix = 0
                 for wcc in wccs:
                     # set subcluster xy to the centroid of just these nodes
-                    subcluster_centroid = node_points.loc[wcc].unary_union.centroid
-                    gdf.loc[wcc, "x"] = subcluster_centroid.x
-                    gdf.loc[wcc, "y"] = subcluster_centroid.y
+                    idx = list(wcc)
+                    subcluster_centroid = node_points.loc[idx].unary_union.centroid
+                    gdf.loc[idx, "x"] = subcluster_centroid.x
+                    gdf.loc[idx, "y"] = subcluster_centroid.y
                     # move to subcluster by appending suffix to cluster label
-                    gdf.loc[wcc, "cluster"] = f"{cluster_label}-{suffix}"
+                    gdf.loc[idx, "cluster"] = f"{cluster_label}-{suffix}"
                     suffix += 1
 
     # give nodes unique integer IDs (subclusters with suffixes are strings)
@@ -531,6 +532,11 @@ def _consolidate_intersections_rebuild_graph(G, tolerance=10, reconnect_edges=Tr
                 x=nodes_subset["x"].iloc[0],
                 y=nodes_subset["y"].iloc[0],
             )
+
+    # calculate street_count attribute for all nodes lacking it
+    null_nodes = [n for n, sc in H.nodes(data="street_count") if sc is None]
+    street_count = stats.count_streets_per_node(H, nodes=null_nodes)
+    nx.set_node_attributes(H, street_count, name="street_count")
 
     if not G.edges or not reconnect_edges:
         # if reconnect_edges is False or there are no edges in original graph

@@ -79,38 +79,6 @@ def interpolate_points(geom, dist):
         raise TypeError(f"unhandled geometry type {geom.geom_type}")
 
 
-def redistribute_vertices(geom, dist):
-    """
-    Do not use, deprecated.
-
-    Parameters
-    ----------
-    geom : shapely.geometry.LineString or shapely.geometry.MultiLineString
-        deprecated, do not use
-    dist : float
-        deprecated, do not use
-
-    Returns
-    -------
-    list or shapely.geometry.MultiLineString
-    """
-    msg = (
-        "The `redistribute_vertices` function has been deprecated and will be removed in a "
-        "future release. Use the more efficient `utils_geo.interpolate_points` instead."
-    )
-    warnings.warn(msg)
-    if geom.geom_type == "LineString":
-        num_vert = round(geom.length / dist)
-        if num_vert == 0:
-            num_vert = 1
-        return [geom.interpolate(n / num_vert, normalized=True) for n in range(num_vert + 1)]
-    elif geom.geom_type == "MultiLineString":
-        parts = [redistribute_vertices(part, dist) for part in geom]
-        return type(geom)([p for p in parts if not p])
-    else:  # pragma: no cover
-        raise ValueError(f"unhandled geometry {geom.geom_type}")
-
-
 def _round_polygon_coords(p, precision):
     """
     Round the coordinates of a shapely Polygon to some decimal precision.
@@ -152,7 +120,7 @@ def _round_multipolygon_coords(mp, precision):
     -------
     shapely.geometry.MultiPolygon
     """
-    return MultiPolygon([_round_polygon_coords(p, precision) for p in mp])
+    return MultiPolygon([_round_polygon_coords(p, precision) for p in mp.geoms])
 
 
 def _round_point_coords(pt, precision):
@@ -188,7 +156,7 @@ def _round_multipoint_coords(mpt, precision):
     -------
     shapely.geometry.MultiPoint
     """
-    return MultiPoint([_round_point_coords(pt, precision) for pt in mpt])
+    return MultiPoint([_round_point_coords(pt, precision) for pt in mpt.geoms])
 
 
 def _round_linestring_coords(ls, precision):
@@ -224,7 +192,7 @@ def _round_multilinestring_coords(mls, precision):
     -------
     shapely.geometry.MultiLineString
     """
-    return MultiLineString([_round_linestring_coords(ls, precision) for ls in mls])
+    return MultiLineString([_round_linestring_coords(ls, precision) for ls in mls.geoms])
 
 
 def round_geometry_coords(geom, precision):
@@ -271,6 +239,11 @@ def _consolidate_subdivide_geometry(geometry, max_query_area_size=None):
     Consolidate a geometry into a convex hull, then subdivide it into smaller
     sub-polygons if its area exceeds max size (in geometry's units). Configure
     the max size via max_query_area_size in the settings module.
+
+    When the geometry has a very large area relative to its vertex count,
+    the resulting MultiPolygon's boundary may differ somewhat from the input,
+    due to the way long straight lines are projected. You can interpolate
+    additional vertices along your input geometry's exterior to mitigate this.
 
     Parameters
     ----------
@@ -332,7 +305,7 @@ def _get_polygons_coordinates(geometry):
 
     # extract geometry's exterior coords
     polygons_coords = []
-    for polygon in geometry:
+    for polygon in geometry.geoms:
         x, y = polygon.exterior.xy
         polygons_coords.append(list(zip(x, y)))
 
@@ -382,26 +355,15 @@ def _quadrat_cut_geometry(geometry, quadrat_width, min_num=3):
     lines = vertical_lines + horizont_lines
 
     # recursively split the geometry by each quadrat line
-    polygons = [geometry]
-    split_polygons = []
+    geometries = [geometry]
+
     for line in lines:
-        for polygon in polygons:
-            # If polygon intersects line, then split it and add all
-            # resulting polygons to split_polygon list. If not, add
-            # it to the list without modifying it.
-            if polygon.intersects(line):
-                split_polygons.extend(split(polygon, line))
-            else:
-                split_polygons.append(polygon)
+        # split polygon by line if they intersect, otherwise just keep it
+        split_geoms = [split(g, line).geoms if g.intersects(line) else [g] for g in geometries]
+        # now flatten the list and process these split geoms on the next line in the list of lines
+        geometries = [g for g_list in split_geoms for g in g_list]
 
-        # Take list of split polygons, and move it back to the input list, preparing to split
-        # it by the next line. Repeat until all lines have been processed.
-        polygons = split_polygons
-        split_polygons = []
-
-    geometry = MultiPolygon(polygons)
-
-    return geometry
+    return MultiPolygon(geometries)
 
 
 def _intersect_index_quadrats(geometries, polygon, quadrat_width=0.5, min_num=3):
@@ -439,7 +401,7 @@ def _intersect_index_quadrats(geometries, polygon, quadrat_width=0.5, min_num=3)
     geoms_in_poly = set()
 
     # loop through each chunk of the polygon to find intersecting geometries
-    for poly in multipoly:
+    for poly in multipoly.geoms:
         # first find approximate matches with spatial index, then precise
         # matches from those approximate ones
         poly = poly.buffer(0)
