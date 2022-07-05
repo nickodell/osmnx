@@ -92,7 +92,7 @@ def plot_route_folium(
     """
     # create gdf of the route edges in order
     node_pairs = zip(route[:-1], route[1:])
-    uvk = ((u, v, min(G[u][v], key=lambda k: G[u][v][k]["length"])) for u, v in node_pairs)
+    uvk = ((u, v, _get_shortest_edge(G[u][v])) for u, v in node_pairs)
     gdf_edges = utils_graph.graph_to_gdfs(G.subgraph(route), nodes=False).loc[uvk]
     return _plot_folium(gdf_edges, route_map, popup_attribute, tiles, zoom, fit_bounds, **kwargs)
 
@@ -186,3 +186,25 @@ def _make_folium_polyline(geom, popup_val=None, **kwargs):
     # create a folium polyline with attributes
     pl = folium.PolyLine(locations=locations, popup=popup, **kwargs)
     return pl
+
+
+def _get_shortest_edge(edges):
+    """
+    Given the edges between two nodes, find the shortest direct path. Does not
+    do any pathfinding - the nodes must be directly connected. Required
+    because it is possible for two nodes to be connected multiple times.
+
+    Parameters
+    ----------
+    edges : networkx.classes.coreviews.AtlasView
+        edge list, dictionary-like
+
+    Returns
+    -------
+    edge_index : int
+    """
+    # For each edge:
+    # Get the edge with the minimum length
+    # Return the index of the shortest edge
+    edge_index = min(edges.items(), key=lambda k: k[1]["length"])[0]
+    return edge_index
