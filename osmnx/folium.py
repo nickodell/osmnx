@@ -190,9 +190,11 @@ def _make_folium_polyline(geom, popup_val=None, **kwargs):
 
 def _get_shortest_edge(edges):
     """
-    Given the edges between two nodes, find the shortest direct path. Does not
-    do any pathfinding - the nodes must be directly connected. Required
-    because it is possible for two nodes to be connected multiple times.
+    Given the edges between two nodes, find the shortest direct path.
+
+    Does not do any pathfinding - the nodes must be directly connected.
+    Required because it is possible for two nodes to be connected multiple
+    times.
 
     Parameters
     ----------
