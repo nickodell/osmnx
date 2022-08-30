@@ -1,8 +1,9 @@
 # Change log
 
-## TBD
+## 1.2.2 (2022-08-05)
 
   - fix compatibility with rasterio 1.3
+  - fix API version when saving OSM XML
   - resolve shapely deprecation warning
 
 ## 1.2.1 (2022-06-16)
