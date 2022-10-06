@@ -487,7 +487,7 @@ def test_geometries():
     gdf = ox.geometries_from_point((48.15, 10.02), tags={"landuse": True}, dist=2000)
 
     # geometries_from_place - includes test of list of places
-    tags = {"amenity": True, "landuse": ["retail", "commercial"], "highway": "bus_stop"}
+    tags = {"amenity": True, "landuse": ["retail", "commercial"], "highway": "bus_stop", "public_transport": ["platform"]}
     gdf = ox.geometries_from_place(place1, tags=tags)
     gdf = ox.geometries_from_place([place1], tags=tags)
 
