@@ -1,10 +1,17 @@
 # Change log
 
-## TBD
+## 1.3.0 (TBD)
+  - support Shapely 2.0
+  - drop RTree package dependency
+  - much faster nearest edges search using STRTree index
+  - allow using alternative Google Maps compatible elevation APIs, such as Open Topo Data
+
+## 1.2.3 (2022-12-14)
 
   - fix bug that added unsimplified edge geometry attributes when projecting
-  - deprecate save_graph_shapefile function
+  - hard code Google DNS IP address
   - resolve matplotlib deprecation warning
+  - deprecate save_graph_shapefile function
 
 ## 1.2.2 (2022-08-05)
 
@@ -31,7 +38,7 @@
   - deprecate utils.config function in favor of using settings module directly
 
 ## 1.1.2 (2021-11-17)
-  
+
   - fix geocoding when no geojson is returned
   - fix graph simplification to properly handle travel_time edge attributes
   - fix streets per node not being calculated when clean_periphery=False
