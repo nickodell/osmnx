@@ -1,10 +1,16 @@
 # Change log
 
-## 1.3.0 (TBD)
-  - support Shapely 2.0
+## TBD
+
+  - drop dateutil package dependency
+
+## 1.3.0 (2023-01-01)
+
+  - fully support Shapely 2.0 and drop support for Shapely 1.x
   - drop RTree package dependency
   - much faster nearest edges search using STRTree index
   - allow using alternative Google Maps compatible elevation APIs, such as Open Topo Data
+  - optionally track merged_edges as a new edge attribute in simplify_graph function
 
 ## 1.2.3 (2022-12-14)
 

@@ -24,7 +24,6 @@ sys.path.insert(0, str(Path().resolve().parent.parent))
 
 # mock import these packages because readthedocs doesn't have them installed
 autodoc_mock_imports = [
-    "dateutil",
     "geopandas",
     "matplotlib",
     "matplotlib.cm",
@@ -40,8 +39,10 @@ autodoc_mock_imports = [
     "scipy",
     "scipy.spatial",
     "shapely",
+    "shapely.errors",
     "shapely.geometry",
     "shapely.ops",
+    "shapely.strtree",
     "sklearn",
     "sklearn.neighbors",
 ]
@@ -50,13 +51,13 @@ autodoc_mock_imports = [
 
 # General information about the project.
 project = "OSMnx"
-copyright = "2016–2022, Geoff Boeing"
+copyright = "2016–2023, Geoff Boeing"
 author = "Geoff Boeing"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-version = release = "1.3.0dev"
+version = release = "1.3.0"
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
