@@ -73,7 +73,7 @@ setup(
     license="MIT",
     platforms="any",
     packages=["osmnx"],
-    python_requires=">=3.9",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     extras_require={
         "entropy": ["scipy"],
