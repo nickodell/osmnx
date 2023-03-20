@@ -48,7 +48,7 @@ def _get_osm_filter(network_type):
     filters["drive"] = (
         f'["highway"]["area"!~"yes"]{settings.default_access}'
         f'["highway"!~"abandoned|bridleway|bus_guideway|construction|corridor|cycleway|elevator|'
-        f"escalator|footway|path|pedestrian|planned|platform|proposed|raceway|service|"
+        f"escalator|footway|no|path|pedestrian|planned|platform|proposed|raceway|razed|service|"
         f'steps|track"]'
         f'["motor_vehicle"!~"no"]["motorcar"!~"no"]'
         f'["service"!~"alley|driveway|emergency_access|parking|parking_aisle|private"]'
@@ -58,7 +58,8 @@ def _get_osm_filter(network_type):
     filters["drive_service"] = (
         f'["highway"]["area"!~"yes"]{settings.default_access}'
         f'["highway"!~"abandoned|bridleway|bus_guideway|construction|corridor|cycleway|elevator|'
-        f'escalator|footway|path|pedestrian|planned|platform|proposed|raceway|steps|track"]'
+        f"escalator|footway|no|path|pedestrian|planned|platform|proposed|raceway|razed|steps|"
+        f'track"]'
         f'["motor_vehicle"!~"no"]["motorcar"!~"no"]'
         f'["service"!~"emergency_access|parking|parking_aisle|private"]'
     )
@@ -70,8 +71,8 @@ def _get_osm_filter(network_type):
     # filter ignores such cycleways.
     filters["walk"] = (
         f'["highway"]["area"!~"yes"]{settings.default_access}'
-        f'["highway"!~"abandoned|bus_guideway|construction|cycleway|motor|planned|platform|'
-        f'proposed|raceway"]'
+        f'["highway"!~"abandoned|bus_guideway|construction|cycleway|motor|no|planned|platform|'
+        f'proposed|raceway|razed"]'
         f'["foot"!~"no"]["service"!~"private"]'
     )
 
@@ -80,7 +81,7 @@ def _get_osm_filter(network_type):
     filters["bike"] = (
         f'["highway"]["area"!~"yes"]{settings.default_access}'
         f'["highway"!~"abandoned|bus_guideway|construction|corridor|elevator|escalator|footway|'
-        f'motor|planned|platform|proposed|raceway|steps"]'
+        f'motor|no|planned|platform|proposed|raceway|razed|steps"]'
         f'["bicycle"!~"no"]["service"!~"private"]'
     )
 
@@ -88,15 +89,16 @@ def _get_osm_filter(network_type):
     # that is private-access only
     filters["all"] = (
         f'["highway"]["area"!~"yes"]{settings.default_access}'
-        f'["highway"!~"abandoned|construction|planned|platform|proposed|raceway"]'
+        f'["highway"!~"abandoned|construction|no|planned|platform|proposed|raceway|razed"]'
         f'["service"!~"private"]'
     )
 
     # to download all ways, including private-access ones, just filter out
     # everything not currently in use
-    filters[
-        "all_private"
-    ] = '["highway"]["area"!~"yes"]["highway"!~"abandoned|construction|planned|platform|proposed|raceway"]'
+    filters["all_private"] = (
+        '["highway"]["area"!~"yes"]["highway"!~"abandoned|construction|no|planned|platform|'
+        'proposed|raceway|razed"]'
+    )
 
     if network_type in filters:
         osm_filter = filters[network_type]
@@ -136,7 +138,6 @@ def _save_to_cache(url, response_json, sc):
     None
     """
     if settings.use_cache:
-
         if sc != 200:
             utils.log(f"Did not save to cache because status code is {sc}")
 
@@ -201,7 +202,6 @@ def _retrieve_from_cache(url, check_remark=False):
     """
     # if the tool is configured to use the cache
     if settings.use_cache:
-
         # return cached response for this url if exists, otherwise return None
         cache_filepath = _url_in_cache(url)
         if cache_filepath is not None:
@@ -461,7 +461,6 @@ def _create_overpass_query(polygon_coord_str, tags):
 
     tags_dict = {}
     for key, value in tags.items():
-
         if isinstance(value, bool):
             tags_dict[key] = value
 
@@ -489,7 +488,6 @@ def _create_overpass_query(polygon_coord_str, tags):
     components = []
     for d in tags_list:
         for key, value in d.items():
-
             if isinstance(value, bool):
                 # if bool (ie, True) just pass the key, no value
                 tag_str = f"[{key!r}](poly:{polygon_coord_str!r});(._;>;);"
