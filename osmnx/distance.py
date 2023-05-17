@@ -345,10 +345,10 @@ def nearest_edges(G, X, Y, interpolate=None, return_dist=False):
 
 
 def _weight_function(weight):
-    """Returns a function that returns the weight of an edge.
+    """Return a function that returns the weight of an edge.
 
-    The returned function is specifically suitable for input to
-    functions :func:`_dijkstra` and :func:`_bellman_ford_relaxation`.
+    Similar to networkx.algorithms.shortest_paths.weighted._weight_function(),
+    but raises error on missing weight.
 
     Parameters
     ----------
