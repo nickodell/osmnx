@@ -344,6 +344,33 @@ def nearest_edges(G, X, Y, interpolate=None, return_dist=False):
         return ne
 
 
+def _weight_function(weight):
+    """Returns a function that returns the weight of an edge.
+
+    The returned function is specifically suitable for input to
+    functions :func:`_dijkstra` and :func:`_bellman_ford_relaxation`.
+
+    Parameters
+    ----------
+    weight : string
+        If it is a string, it is assumed to be the name of the edge attribute
+        that represents the weight of an edge. In that case, a function is
+        returned that gets the edge weight according to the specified edge
+        attribute.
+
+    Returns
+    -------
+    function
+        This function returns a callable that accepts exactly three inputs:
+        a node, an node adjacent to the first one, and the edge attribute
+        dictionary for the eedge joining those nodes. That function returns
+        a number representing the weight of an edge.
+
+    If any edge does not have an attribute with key `weight`, it is an error.
+    """
+    return lambda u, v, data: data[weight]
+
+
 def _single_shortest_path(G, orig, dest, weight):
     """
     Solve the shortest path from an origin node to a destination node.
@@ -367,8 +394,9 @@ def _single_shortest_path(G, orig, dest, weight):
     path : list
         list of node IDs constituting the shortest path
     """
+    weight_func = _weight_function(weight)
     try:
-        return nx.shortest_path(G, orig, dest, weight=weight, method="dijkstra")
+        return nx.shortest_path(G, orig, dest, weight=weight_func, method="dijkstra")
     except nx.exception.NetworkXNoPath:  # pragma: no cover
         utils.log(f"Cannot solve path from {orig} to {dest}")
         return None
@@ -469,6 +497,8 @@ def k_shortest_paths(G, orig, dest, k, weight="length"):
         a generator of `k` shortest paths ordered by total weight. each path
         is a list of node IDs.
     """
-    paths_gen = nx.shortest_simple_paths(utils_graph.get_digraph(G, weight), orig, dest, weight)
+    G = utils_graph.get_digraph(G, weight)
+    weight_func = _weight_function(weight)
+    paths_gen = nx.shortest_simple_paths(G, orig, dest, weight_func)
     for path in itertools.islice(paths_gen, 0, k):
         yield path
