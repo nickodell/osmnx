@@ -1,6 +1,6 @@
 # OSMnx fork
 
-This is a performance-oriented fork of OSMnx.
+This is a performance-oriented fork of OSMnx. It is intended largely for querying sparse features across large areas.
 
 Before you can install the osmnx package, you must [set up SSH authentication for GitHub](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account). Once you have that, you can install the utility with
 ```
